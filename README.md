@@ -4,7 +4,25 @@ A Hereya source template for static websites. Astro 5 + Tailwind CSS v4, deploye
 
 ## Use this template
 
-Don't clone directly — scaffold a new project with the Hereya CLI. From your local machine:
+Don't clone directly — scaffold a new project with the Hereya CLI. There are two paths:
+
+### Local
+
+Develop on your own machine:
+
+```bash
+hereya init hereya/<your-project> \
+  -w hereya/<your-workspace> \
+  -d hereya/<your-staging-workspace> \
+  -t hereya/github-private-repo \
+  -p "sourceTemplate=hereya/static-website-template"
+```
+
+This creates a private GitHub repo from the template and clones it into the current directory.
+
+### Devenv (remote VM)
+
+Develop on a Hereya dev VM:
 
 ```bash
 hereya devenv project init hereya/<your-project> \
@@ -14,7 +32,7 @@ hereya devenv project init hereya/<your-project> \
   -p "sourceTemplate=hereya/static-website-template"
 ```
 
-This creates a private GitHub repo from the template and clones it onto your dev VM.
+This creates the GitHub repo and clones it onto the devenv worker. Connect with `hereya devenv ssh -w hereya/<your-devenv>` to develop.
 
 ## Stack
 
@@ -28,26 +46,23 @@ This creates a private GitHub repo from the template and clones it onto your dev
 
 ## Develop
 
-On the dev VM:
-
 ```bash
 hereya up                          # provision Hereya packages (no-op for this template)
 npm install
 hereya run -- npm run dev          # binds to http://localhost:4321
 ```
 
-Preview from your local machine — either an SSH `-L` tunnel or a `cloudflared` quick-tunnel works:
+If you're on a devenv, expose the dev server to your local browser via SSH `-L` or a cloudflared quick-tunnel:
 
 ```bash
-# Cloudflared (anonymous, ephemeral URL — fine for sharing during dev)
 cloudflared tunnel --url http://localhost:4321
 ```
 
-`astro.config.mjs` allows `*.trycloudflare.com` hosts so the tunnel works without extra config.
+`astro.config.mjs` allowlists `*.trycloudflare.com` hosts so the tunnel works without extra config.
 
 ## Deploy
 
-`hereya.yaml` includes a `preDeployCommand` that runs `npm install && npm run build` on the remote executor (which clones a fresh copy of your repo on every run, so it has no `node_modules` and no `dist/`). You don't need to build manually before deploying.
+`hereya.yaml` includes a `preDeployCommand` that runs `npm install && npm run build` on the remote executor (which clones a fresh copy of your repo on every run, so it has no `node_modules` and no `dist/`). You don't need to build manually.
 
 ```bash
 hereya deploy -w hereya/<your-staging-workspace>
@@ -61,16 +76,6 @@ To tear it down:
 hereya undeploy -w hereya/<your-staging-workspace>
 ```
 
-### Optional: CI/CD with AWS CodeBuild
-
-`buildspec.yml` is provided for users who want push-to-main to trigger deploys via CodeBuild. To enable it, create a CodeBuild project that watches your repo and set these environment variables:
-
-- `HEREYA_TOKEN` — your Hereya API token
-- `HEREYA_CLOUD_URL` — your Hereya cloud endpoint
-- `DEPLOY_WORKSPACE` — e.g. `hereya/<your-staging-workspace>`
-
-Without this wiring, the buildspec is dormant and you deploy manually as above.
-
 ## Repo layout
 
 ```
@@ -82,7 +87,6 @@ public/
   favicon.svg
 astro.config.mjs         # Vite + Tailwind plugin, allowedHosts, output: static
 hereya.yaml              # deploy package + preDeployCommand
-buildspec.yml            # optional CodeBuild config
 ```
 
 ## Customize
