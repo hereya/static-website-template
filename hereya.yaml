@@ -3,3 +3,4 @@
 deploy:
   hereya/cloudfront-deploy:
     version: ""
+preDeployCommand: npm install && npm run build
